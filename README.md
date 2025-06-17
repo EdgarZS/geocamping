@@ -137,12 +137,12 @@ geocamping/
 ```
 ## 🎥 Video Demo
 
-[![Ver demo](assets/demo-preview.png)](https://youtu.be/_DtFGIQaS0k)
+[![Ver demo](capturas/video.png)](https://youtu.be/_DtFGIQaS0k)
 
 ## 🖼️ Capturas
 
-### Vista de Reservas
-![Reservas](assets/reservas-screenshot.png)
+### Vista de Login
+![Reservas](capturas/1.png)
 
 ### Mapa de Zonas Disponibles
-![Mapa](assets/mapa-preview.png)
+![Mapa](capturas/2.png)
