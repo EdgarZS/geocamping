@@ -8,12 +8,14 @@
 ![Azure](https://img.shields.io/badge/Deployed%20on-Microsoft%20Azure-blue)
 
 ---
-## 🏽 Esquipo de Desarrollo
+## Esquipo de Desarrollo
+
+Este proyecto fue desarrollado como parte del Proyecto Final para la materia de "Programacion de Bases de Datos - 5701" en el "Tecnologico de Estudios Superiores de Ecatepec"
 
 | Nombre          | Rol                     |
 | --------------- | ----------------------- |
 | Alcántara Pérez Alan Eduardo    | Administrador del Servidor SQL       |
-| Arana López Estefany Michelle    | Administradora del Servicio de Comunicacinoes   |
+| Arana López Estefany Michelle    | Administradora del Servicio de Comunicaciones   |
 | Castro Soriano Víctor Adrián   | Administrador del gestor de archivos BLOB |
 | Estrada Tapia Fernanda Graciela   | Administradora del servicio de Azure Maps     |
 | Huerta Torres Miguel Ángel | Experto en Bases de Datos        |
@@ -21,7 +23,7 @@
 
 ---
 
-## 🏽 Funcionalidades
+## Funcionalidades
 
 ### 👥 Para usuarios (clientes)
 - Mapa interactivo con zonas marcadas (Azure Maps)
