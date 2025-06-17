@@ -135,3 +135,15 @@ geocamping/
 ├── requirements.txt
 └── README.md
 ```
+
+## 🎥 Video Demo
+
+[![Ver demo](assets/demo-preview.png)](https://youtu.be/_DtFGIQaS0k)
+
+## 🖼️ Capturas
+
+### Vista de Reservas
+![Reservas](assets/reservas-screenshot.png)
+
+### Mapa de Zonas Disponibles
+![Mapa](assets/mapa-preview.png)
