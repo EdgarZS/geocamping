@@ -3,9 +3,21 @@
 
 **GeoCamping** es una plataforma de reservas de zonas de campamento georreferenciadas, impulsada por mapas interactivos, pagos online y herramientas administrativas avanzadas.
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![Python](https://img.shields.io/badge/Python-3.13+-blue)
 ![Flask](https://img.shields.io/badge/Flask-2.x-lightgrey)
 ![Azure](https://img.shields.io/badge/Deployed%20on-Microsoft%20Azure-blue)
+
+---
+## 🏽 Esquipo de Desarrollo
+
+| Nombre          | Rol                     |
+| --------------- | ----------------------- |
+| Alcántara Pérez Alan Eduardo    | Administrador del Servidor SQL       |
+| Arana López Estefany Michelle    | Administradora del Servicio de Comunicacinoes   |
+| Castro Soriano Víctor Adrián   | Administrador del gestor de archivos BLOB |
+| Estrada Tapia Fernanda Graciela   | Administradora del servicio de Azure Maps     |
+| Huerta Torres Miguel Ángel | Experto en Bases de Datos        |
+| Zaragoza San Juan Edgar Noe | Lider del Proyecto, Programador FullStack        |
 
 ---
 
@@ -48,8 +60,8 @@
 
 ## 📦 Requisitos
 
-- Python 3.10 o superior
-- Microsoft ODBC Driver for SQL Server (si ejecutas localmente)
+- Python 3.13 o superior
+- Microsoft ODBC Driver for SQL Server
 - Claves/API Keys para:
   - Azure Maps
   - Azure Blob Storage
@@ -97,7 +109,7 @@ SECRET_KEY=una_clave_secreta_segura
 python app.py
 ```
 
-Visita `http://localhost:5000` en tu navegador.
+Visita `http://127.0.0.1:5000` en tu navegador.
 
 ---
 
@@ -106,11 +118,6 @@ Visita `http://localhost:5000` en tu navegador.
 1. Crea una instancia de App Service en Azure.
 2. Usa el [Deployment Center](https://learn.microsoft.com/en-us/azure/app-service/deploy-continuous-deployment) para conectar tu repositorio GitHub.
 3. Configura variables de entorno en **Configuration → Application settings**.
-4. Asegúrate de usar un `startup command` apropiado si usas Linux:
-
-```bash
-gunicorn -w 4 -b 0.0.0.0:8000 app:app
-```
 
 ---
 
@@ -126,20 +133,3 @@ geocamping/
 ├── requirements.txt
 └── README.md
 ```
-
----
-
-## 🛡️ Licencia
-
-MIT License © [TuNombre](https://github.com/tu_usuario)
-
----
-
-## 🤝 Agradecimientos
-
-- Microsoft Azure for Students
-- Open-Meteo for free and open weather data
-- Stripe for friendly dev tools
-- Flask for being awesome
-
----
