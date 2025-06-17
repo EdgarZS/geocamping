@@ -1,7 +1,0 @@
-<h2>Registro</h2>
-<form method="post">
-    Nombre: <input type="text" name="name"><br>
-    Correo: <input type="email" name="email"><br>
-    Contraseña: <input type="password" name="password"><br>
-    <input type="submit" value="Registrar">
-</form>
