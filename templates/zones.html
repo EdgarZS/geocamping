@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"type="text/css">
+        <link rel="stylesheet" href="https://static.pingendo.com/bootstrap/bootstrap-4.3.1.css">
+    </head>
+    <title>GeoCamping</title>
+    <link href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" rel="stylesheet" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
+</head>
+
+<body onload="loadMap()" class="bg-dark text-white" style="margin: 0; padding: 0; overflow: hidden;">
+  <nav class="navbar navbar-expand-lg bg-dark navbar-dark" >
+    <div class="container"> <button class="navbar-toggler navbar-toggler-right border-0 p-0" type="button" data-toggle="collapse" data-target="#navbar14">
+        <p class="navbar-brand mb-0 text-white">
+          <i class="fa d-inline fa-lg fa-map-marker"></i> GeoCamping </p>
+      </button>
+      <div class="collapse navbar-collapse" id="navbar14">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item"> <a class="btn btn-light" href="/reservas" ><i class="fa fa-book fa-fw"></i>&nbsp;Mis Reservas</a> </li>
+        </ul>
+       <a href="/zones"> <p class="d-none d-md-block lead mb-0  text-white"> <i class="fa d-inline fa-lg fa-map-marker"></i> <b> GeoCamping</b> </p></a>
+        <ul class="navbar-nav ml-auto">
+          <button class="btn btn-link text-white" onclick="window.location.href='/logout'">
+            <i class="fa fa-sign-out fa-fw"></i> Cerrar Sesion
+          </button>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+    <div id="map-container" style="position: relative; height: calc(100vh - 56px);">
+        <div id="myMap" style="width: 100%; height: 100%;"></div>
+        <div id="weather-slider" style="position:absolute; top:10px; left:20px; z-index:1000; background:#fff; padding:10px; border-radius:8px; display:flex; gap:8px; overflow-x:auto; max-width: calc(100% - 400px); box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>
+
+
+        <!-- Sidebar flotante -->
+        <div id="sidebar"
+             class="card text-dark bg-light"
+             style="position: absolute; top: 20px; right: 20px; width: 350px; max-height: 90%; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.4); border-radius: 10px;">
+            <div class="card-body">
+                <h5 class="card-title">Informacion de la Zona</h5>
+                <div id="zone-detail">
+                    <p class="text-muted">Haz clic en una zona del mapa para ver sus detalles.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastHoveredId = null;
+        function loadMap() {
+            const map = new atlas.Map('myMap', {
+                center: [-99.18945481670335, 19.419492713270472],
+                zoom: 16,
+                style: "satellite_road_labels",
+                view: 'Auto',
+                authOptions: {
+                    authType: 'subscriptionKey',
+                    subscriptionKey: 'C1aV07zlVLBOOkN0EKcoJ7ukidFV9dG5ZIccXmB1xEqKgHxqIdckJQQJ99BFACYeBjF3acCYAAAgAZMP1Hl4'
+                }
+            });
+
+            map.events.add('ready', function () {
+                map.controls.add(new atlas.control.ZoomControl(), { position: 'top-right' });
+                const zoneSource = new atlas.source.DataSource();
+                map.sources.add(zoneSource);
+
+                const polygonLayer = new atlas.layer.PolygonLayer(zoneSource, null, {
+                    fillColor: [
+                        'match',
+                        ['get', 'current_state'],
+                        'disponible', 'rgba(40,167,69,0.6)',
+                        'reservado',  'rgba(255,193,7,0.6)',
+                        'ocupado',    'rgba(220,53,69,0.6)',
+                        'rgba(108,117,125,0.3)'
+                    ],
+                    fillOpacity: [
+                        'case',
+                        ['boolean', ['get', '_hover'], false], 1.2,
+                        0.6
+                    ],
+                    strokeColor: 'black',
+                    strokeWidth: 2
+                });
+
+                map.layers.add(polygonLayer);
+
+                fetch('/zones.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        zoneSource.add(data);
+
+                        if (data.features.length > 0) {
+                            const bounds = atlas.data.BoundingBox.fromData(data);
+                            map.setCamera({ bounds: bounds, padding: 30 });
+                        }
+
+                        map.events.add('click', polygonLayer, function (e) {
+                            if (e.shapes && e.shapes.length > 0) {
+                                const shape = e.shapes[0];
+                                const props = shape.getProperties();
+
+                                const today = new Date();
+                                const tomorrow = new Date(today);
+                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                const minDate = tomorrow.toISOString().split('T')[0];
+
+                                const zonePanel = document.getElementById('zone-detail');
+                                zonePanel.innerHTML = `
+                                <div class="card zone-card">
+                                    <img class="card-img-top" src="${props.main_image_url}" alt="Card image cap">
+                                    <div class="card-body">
+                                        <h4 class="card-title">${props.name}</h4>
+                                        <p><strong>Tipo:</strong> ${props.terrain_type}</p>
+                                        <p><strong>Tamaño:</strong> ${props.size_m2} m²</p>
+                                        <p><strong>Capacidad:</strong> ${props.capacity} personas</p>
+                                        <p><strong>Reglas:</strong> ${props.rules}</p>
+                                        <p><strong>Zonas de Interes:</strong> ${props.estrategicas}</p>
+                                        <p><strong>Estado:</strong> ${props.current_state}</p>
+                                        <p><strong>Precio:</strong> $${props.precio}/dia</p>
+                                        
+                                        ${props.logged_in ?
+                                        
+                                            `<div class="form-group">
+                                            <label for="fechaInicio">Fecha de Inicio:</label>
+                                            <input type="date" class="form-control" id="fechaInicio" min="${minDate}">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="fechaFin">Fecha de Salida:</label>
+                                            <input type="date" class="form-control" id="fechaFin" min="${minDate}">
+                                        </div>
+                                           <button onclick="reservarZona(${props.id}, '${props.name}', ${props.precio})" class="btn btn-success">Reservar</button>` :
+                                            `<a href='/login'><button class="btn btn-info">Acceda a su cuenta para reservar</button></a>`
+                                        }
+                                    </div>
+                                </div>`;
+
+                            fetch(`/zones/${props.id}/fechas_ocupadas`)
+                            .then(res => res.json())
+                            .then(fechasOcupadas => {
+                                // Llamada para deshabilitar fechas
+                                deshabilitarFechas(fechasOcupadas);
+                            });
+
+                            // Esperar a que el usuario seleccione la fecha para mostrar clima
+setTimeout(() => {
+    const inputInicio = document.getElementById('fechaInicio');
+    if (inputInicio) {
+        inputInicio.addEventListener('input', () => {
+            const startDate = inputInicio.value;
+            if (startDate) {
+                const [lon, lat] = shape.getCoordinates()[0][0];
+                showWeatherSlide(lat, lon, startDate);
+            }
+        });
+    }
+}, 100);
+
+
+                            // tras renderizar el HTML del panel...
+                            const [lon, lat] = shape.getCoordinates()[0][0];
+                            showWeatherSlide(lat, lon, fechaInicio);
+
+                            }
+
+
+
+                        });
+                                // Resaltar polígono al pasar el mouse
+        map.events.add('mousemove', polygonLayer, function (e) {
+    if (e.shapes && e.shapes.length > 0) {
+        const shape = e.shapes[0];
+        const id = shape.getId();
+        if (lastHoveredId !== id) {
+            // Quitar hover anterior
+            if (lastHoveredId) {
+                const lastShape = zoneSource.getShapeById(lastHoveredId);
+                if (lastShape) {
+                    const props = lastShape.getProperties();
+                    delete props._hover;
+                    lastShape.setProperties(props);
+                }
+            }
+
+            // Activar hover actual
+            const props = shape.getProperties();
+            props._hover = true;
+            shape.setProperties(props);
+            lastHoveredId = id;
+        }
+    }
+});
+
+map.events.add('mouseout', polygonLayer, function () {
+    if (lastHoveredId) {
+        const shape = zoneSource.getShapeById(lastHoveredId);
+        if (shape) {
+            const props = shape.getProperties();
+            delete props._hover;
+            shape.setProperties(props);
+        }
+        lastHoveredId = null;
+    }
+});
+                    })
+                    .catch(error => {
+                        console.error('Error cargando /zones.geojson:', error);
+                    });
+            });
+        }
+
+        ///////// LOGICA PARA RESERVAR ZONA ///////////
+
+        function reservarZona(zoneId, zoneName, precio) {
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+
+    if (!fechaInicio || !fechaFin) {
+        alert("Por favor selecciona ambas fechas.");
+        return;
+    }
+
+    if (new Date(fechaFin) <= new Date(fechaInicio)) {
+        alert("La fecha de salida debe ser posterior a la de entrada.");
+        return;
+    }
+
+    // Redireccionar con datos GET
+    const url = `/reservar?zone_id=${zoneId}&start=${fechaInicio}&end=${fechaFin}`;
+    window.location.href = url;
+}
+// Fin de la logica para reservar zona
+
+function deshabilitarFechas(fechasBloqueadas) {
+    const inicio = document.getElementById("fechaInicio");
+    const fin = document.getElementById("fechaFin");
+
+    // Resetear
+    inicio.value = '';
+    fin.value = '';
+
+    inicio.removeAttribute("disabled");
+    fin.removeAttribute("disabled");
+
+    // Crear restricciones personalizadas
+    const disableDates = (input) => {
+        input.addEventListener("input", () => {
+            const selectedDate = input.value;
+            if (fechasBloqueadas.includes(selectedDate)) {
+                alert("La fecha seleccionada ya está reservada.");
+                input.value = '';
+            }
+        });
+    };
+
+    disableDates(inicio);
+    disableDates(fin);
+}
+
+async function fetchWeather(lat, lon, startDate) {
+  const start = new Date(startDate);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const startStr = start.toISOString().split('T')[0];
+  const endStr = end.toISOString().split('T')[0];
+
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+              `&start_date=${startStr}&end_date=${endStr}&daily=weathercode,temperature_2m_max` +
+              `&timezone=auto`;
+  const resp = await fetch(url);
+  return resp.json();
+}
+
+function mapWeatherCodeToEmoji(code) {
+  if (code === 0) return '☀️';
+  if (code <= 3) return '🌤️';
+  if (code <= 49) return '🌫️';
+  if (code <= 69) return '🌧️';
+  if (code <= 79) return '🌨️';
+  if (code <= 95) return '⛈️';
+  return '❓';
+}
+
+function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    return `${day}/${month}`;
+}
+
+async function showWeatherSlide(lat, lon, startDate) {
+  const data = await fetchWeather(lat, lon, startDate);
+  const dates = data.daily.time;
+  const codes = data.daily.weathercode;
+  const temps = data.daily.temperature_2m_max;
+  const slider = document.getElementById('weather-slider');
+  slider.innerHTML = '';
+  for (let i = 0; i < dates.length; i++) {
+    const div = document.createElement('div');
+    div.style.textAlign = 'center';
+    div.style.minWidth = '60px';
+    div.innerHTML = `
+    <div style="font-size:12px; color: black;">${formatDate(dates[i])}</div>
+      <div style="font-size:24px">${mapWeatherCodeToEmoji(codes[i])}</div>
+      <div style="font-size:14px; color: black;">${Math.round(temps[i])}°C</div>
+    `;
+    slider.appendChild(div);
+  }
+}
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+Flask
+Werkzeug
+pyodbc
+azure-communication-email
+azure-storage-blob
+Pillow
+stripe
+qrcode

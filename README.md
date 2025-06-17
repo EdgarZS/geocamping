@@ -135,7 +135,6 @@ geocamping/
 ├── requirements.txt
 └── README.md
 ```
-
 ## 🎥 Video Demo
 
 [![Ver demo](assets/demo-preview.png)](https://youtu.be/_DtFGIQaS0k)
