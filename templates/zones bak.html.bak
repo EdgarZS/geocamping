@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <title>Zonas Disponibles</title>
+    <link href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" rel="stylesheet" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: sans-serif;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #myMap {
+            flex: 2;
+            height: 100%;
+        }
+
+        #sidebar {
+            flex: 1;
+            background-color: #f9f9f9;
+            overflow-y: auto;
+            padding: 1rem;
+            border-left: 1px solid #ccc;
+        }
+
+        .zone-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        .zone-card h3 {
+            margin-top: 0;
+        }
+
+        .zone-card button {
+            background-color: #28a745;
+            border: none;
+            padding: 8px 12px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .zone-card button:hover {
+            background-color: #218838;
+        }
+
+        .zone-card a button {
+            background-color: #007bff;
+        }
+
+        .zone-card a button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body onload="loadMap()">
+
+
+  <div class="container">
+      <div id="myMap"></div>
+      <div id="sidebar">
+          <h2>Zonas Disponibles</h2>
+          <div id="zone-detail">
+              <p>Haz clic en una zona del mapa para ver sus detalles.</p>
+          </div>
+      </div>
+  </div>
+
+    <script>
+        function loadMap() {
+            const map = new atlas.Map('myMap', {
+                center: [-99.18945481670335, 19.419492713270472],
+                zoom: 16,
+                view: 'Auto',
+                authOptions: {
+                    authType: 'subscriptionKey',
+                    subscriptionKey: 'C1aV07zlVLBOOkN0EKcoJ7ukidFV9dG5ZIccXmB1xEqKgHxqIdckJQQJ99BFACYeBjF3acCYAAAgAZMP1Hl4'
+                }
+            });
+
+            map.events.add('ready', function () {
+                // Agregar controles
+                map.controls.add(new atlas.control.ZoomControl(), { position: 'top-right' });
+
+                // Crear DataSource y agregarlo
+                const zoneSource = new atlas.source.DataSource();
+                map.sources.add(zoneSource);
+
+                // Crear la capa de polígonos y guardarla como referencia
+                const polygonLayer = new atlas.layer.PolygonLayer(zoneSource, null, {
+                    fillColor: 'rgba(255, 0, 0, 0.3)',
+                    strokeColor: 'red',
+                    strokeWidth: 2
+                });
+
+                map.layers.add(polygonLayer);
+
+                // Cargar GeoJSON desde Flask
+                fetch('/zones.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        zoneSource.add(data);
+
+                        // Hacer zoom automático
+                        if (data.features.length > 0) {
+                            const bounds = atlas.data.BoundingBox.fromData(data);
+                            map.setCamera({ bounds: bounds, padding: 30 });
+                        }
+
+                        // ✅ Asignar evento de clic usando referencia directa a la capa
+                        map.events.add('click', polygonLayer, function (e) {
+                            if (e.shapes && e.shapes.length > 0) {
+                                const shape = e.shapes[0];
+                                const props = shape.getProperties();
+
+                                const zonePanel = document.getElementById('zone-detail');
+                                zonePanel.innerHTML = `
+                                <div class="zone-card">
+                                    <h3>${props.name}</h3>
+                                    <p><strong>Tipo:</strong> ${props.terrain_type}</p>
+                                    <p><strong>Tamaño:</strong> ${props.size_m2} m²</p>
+                                    <p><strong>Capacidad:</strong> ${props.capacity}</p>
+                                    <p><strong>Estado:</strong> ${props.current_state}</p>
+                                    ${props.logged_in ?
+                                        `<button onclick="alert('Reservar zona ${props.id}')">Reservar</button>` :
+                                        `<a href='/register'><button>Regístrese para reservar</button></a>`
+                                    }
+                                </div>
+                            `;
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error cargando /zones.geojson:', error);
+                    });
+            });
+        }
+    </script>
+
+
+</body>
+
+</html>

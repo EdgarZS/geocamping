@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Registrar Nueva Zona</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://static.pingendo.com/bootstrap/bootstrap-4.3.1.css">
+    <link href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" rel="stylesheet" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
+</head>
+
+<body onload="loadMap()" style="margin:0; padding:0; overflow:hidden;">
+
+<nav class="navbar navbar-expand-lg bg-info navbar-light shadow-lg">
+    <div class="container"> <button class="navbar-toggler navbar-toggler-right border-0 p-0" type="button" data-toggle="collapse" data-target="#navbar14">
+        <p class="navbar-brand mb-0 text-dark">
+          <i class="fa d-inline fa-lg fa-stop-circle"></i> BRAND </p>
+      </button>
+      <div class="collapse navbar-collapse" id="navbar14">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item"> <a class="nav-link" href="/admin/admins">Adminis</a> </li>
+          <li class="nav-item"> <a class="nav-link" href="/admin/usuarios">Usuarios</a> </li>
+          <li class="nav-item"> <a class="nav-link" href="/admin/zones">Zonas</a> </li>
+          <li class="nav-item"> <a class="nav-link" href="/admin/reservas">Reservas</a> </li>
+        </ul>
+         <a href="/admin/dashboard"><p class="d-none d-md-block lead mb-0  text-dark"> <i class="fa d-inline fa-lg fa-map-marker"></i><b>&nbsp;Dashboard</b></p></a>
+        <ul class="navbar-nav ml-auto">
+          <a href="/admin/logout" class="btn btn-outline-dark btn-sm">Cerrar sesión</a>
+        </ul>
+      </div>
+    </div>
+  </nav>
+<div id="map-container" style="position: relative; height: 100vh;">
+    <div id="navSlide" class="card bg-light text-dark p-3" style="position: absolute; top: 20px; left: 20px; z-index: 999; width: 320px; border-radius: 10px; box-shadow: 0px 1px 7px rgba(0,0,0,0.4);">
+  <h5><b>Ir a ubicación</b></h5>
+  <div class="form-group">
+    <label for="selectPlace">Selecciona destino</label>
+    <select id="selectPlace" class="form-control">
+      <option value="">-- Selecciona --</option>
+      <option value="19.419198375299345,-99.1849565924832,17">CDMX</option>
+      <option value="16.60523860421333,-96.57742005683495,17">Oaxaca</option>
+      <option value="19.589103282514976,-96.3879286895841,17">Veracruz</option>
+      <option value="21.043612538755646,-89.42069421287688,17">Yucatán</option>
+      <option value="19.537587368400832,-101.59627381188878,17">Michoacán</option>
+      <option value="25.337104152702427,-100.11522967804548,17">Monterrey</option>
+      <option value="18.227922233250087,-88.57981628997268,17">Quintana Roo</option>
+      <option value="20.583131626356472,-103.46145413151514,17">Jalisco</option>
+    </select>
+  </div>
+  <button class="btn btn-info btn-sm btn-block" onclick="moveToLocation()">Mover cámara</button>
+</div>
+    <div id="myMap" style="width: 100%; height: 100%;"></div>
+
+    <div id="sidebar" class="card text-dark bg-light"
+         style="position: absolute; top: 20px; right: 20px; width: 400px; max-height: 90%; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.4); border-radius: 10px; box-shadow: 0px 1px 7px  black;">
+        <div class="card-body">
+            <h5 class="card-title">Registrar Nueva Zona</h5>
+            <form id="zoneForm" method="POST" action="/admin/zones/register" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input class="form-control" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Tamaño (m²)</label>
+                    <input class="form-control" name="size_m2" type="number" step="0.01" required readonly>
+                </div>
+                <div class="form-group">
+                    <label>Capacidad</label>
+                    <input class="form-control" name="capacity" type="number" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de terreno</label>
+                    <input class="form-control" name="terrain_type">
+                </div>
+                <div class="form-group">
+                    <label>Reglas</label>
+                    <textarea class="form-control" name="rules"></textarea>
+                </div>
+                 <div class="form-group">
+                    <label>Zonas de interes</label>
+                    <textarea class="form-control" name="nearby_features"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Servicios disponibles</label>
+                    <div id="services-checkboxes" class="form-check" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; padding: 10px;">
+                        <!-- Checkboxes se insertan dinámicamente -->
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Precio por día</label>
+                    <input class="form-control" name="precio" type="number" step="0.01">
+                </div>
+                <div class="form-group">
+        <label>Imagen principal</label>
+        <input class="form-control-file" type="file" name="image" accept="image/*" required>
+    </div>
+
+    <div class="form-group">
+    <label>Imágenes adicionales (hasta 4)</label>
+    <input class="form-control-file" type="file" name="extra_images" accept="image/*" multiple>
+    <small class="text-muted">Puedes subir hasta 4 imágenes adicionales.</small>
+</div>
+                <div class="form-group">
+                    <label>GeoJSON</label>
+                    <textarea class="form-control" name="geojson" id="geojsonInput" readonly required></textarea>
+                    <div class="d-flex justify-content-between mt-2">
+                        <button type="button" class="btn btn-info btn-sm" onclick="startMarkerMode()">Dibujar zona</button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="finalizePolygon()">Terminar dibujo</button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-success btn-block" type="submit">Guardar zona</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel de edición de zona (inicialmente oculto) -->
+<div id="editSidebar" class="card text-dark bg-light"
+     style="display: none; position: absolute; top: 20px; right: 20px; width: 400px; max-height: 90%; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.4); border-radius: 10px; box-shadow: 0px 1px 7px  black;">
+    <div class="card-body">
+        <h5 class="card-title">Editar Zona</h5>
+        <form id="editZoneForm" method="POST">
+            <input type="hidden" name="id" id="edit_id">
+            <div class="form-group"><label>Nombre</label><input class="form-control" name="name" id="edit_name" required></div>
+            <div class="form-group"><label>Tamaño (m²)</label><input class="form-control" name="size_m2" type="number" id="edit_size_m2" readonly></div>
+            <div class="form-group"><label>Capacidad</label><input class="form-control" name="capacity" type="number" id="edit_capacity"></div>
+            <div class="form-group"><label>Tipo de terreno</label><input class="form-control" name="terrain_type" id="edit_terrain_type"></div>
+            <div class="form-group"><label>Reglas</label><textarea class="form-control" name="rules" id="edit_rules"></textarea></div>
+            <div class="form-group"><label>Zonas de interés</label><textarea class="form-control" name="nearby_features" id="edit_nearby_features"></textarea></div>
+            <div class="form-group"><label>Precio por día</label><input class="form-control" name="precio" type="number" id="edit_precio"></div>
+            <div class="form-group">
+                <label>Estado actual</label>
+                <select class="form-control" name="current_state" id="edit_current_state">
+                    <option value="disponible">Disponible</option>
+                    <option value="reservado">Reservado</option>
+                    <option value="ocupado">Ocupado</option>
+                </select>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+                <button type="submit" formaction="/admin/zones/update" class="btn btn-warning">Actualizar</button>
+                <button type="submit" formaction="/admin/zones/delete" class="btn btn-danger" onclick="return confirm('¿Eliminar esta zona permanentemente?')">Eliminar</button>
+            </div>
+            <div class="text-center mt-2">
+                <a href="#" onclick="cancelEdit()" class="btn btn-link btn-sm">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</div>
+
+<script>
+    let map, markerSource, polygonSource;
+    let markerCoords = [];
+    let markerClickHandler = null;
+
+    function loadMap() {
+        map = new atlas.Map('myMap', {
+            center: [-99.18491491734943,19.419093717972828],
+            zoom: 17,
+            style: 'satellite_road_labels',
+            view: 'Auto',
+            authOptions: {
+                authType: 'subscriptionKey',
+                subscriptionKey: 'C1aV07zlVLBOOkN0EKcoJ7ukidFV9dG5ZIccXmB1xEqKgHxqIdckJQQJ99BFACYeBjF3acCYAAAgAZMP1Hl4'
+            }
+        });
+
+        
+
+        map.events.add('ready', function () {
+            map.controls.add(new atlas.control.ZoomControl(), { position: 'top-right' });
+
+            // Mostrar zonas existentes
+            const existingSource = new atlas.source.DataSource();
+            map.sources.add(existingSource);
+
+            const layer = new atlas.layer.PolygonLayer(existingSource, null, {
+                fillColor: [
+                    'match', ['get', 'current_state'],
+                    'disponible', 'rgba(40,167,69,0.6)',
+                    'reservado',  'rgba(255,193,7,0.6)',
+                    'ocupado',    'rgba(220,53,69,0.6)',
+                    'rgba(108,117,125,0.3)'
+                ],
+                fillOpacity: [
+                    'case',
+                    ['boolean', ['get', '_hover'], false], 1.2,
+                    0.6
+                ],
+                strokeColor: 'black',
+                strokeWidth: 2
+            });
+            map.layers.add(layer);
+
+            fetch('/zones.geojson')
+                .then(res => res.json())
+                .then(data => existingSource.add(data));
+
+            // Evento de clic en polígonos
+            map.events.add('click', layer, function (e) {
+    if (e.shapes && e.shapes.length > 0) {
+        const shape = e.shapes[0];
+        loadEditableSidebar(shape);
+    }
+});
+
+let lastHoveredId = null;
+
+map.events.add('mousemove', layer, function (e) {
+    if (e.shapes && e.shapes.length > 0) {
+        const shape = e.shapes[0];
+        const id = shape.getId();
+        if (lastHoveredId !== id) {
+            if (lastHoveredId) {
+                const lastShape = existingSource.getShapeById(lastHoveredId);
+                if (lastShape) {
+                    const props = lastShape.getProperties();
+                    delete props._hover;
+                    lastShape.setProperties(props);
+                }
+            }
+
+            const props = shape.getProperties();
+            props._hover = true;
+            shape.setProperties(props);
+            lastHoveredId = id;
+        }
+    }
+});
+
+map.events.add('mouseout', layer, function () {
+    if (lastHoveredId) {
+        const shape = existingSource.getShapeById(lastHoveredId);
+        if (shape) {
+            const props = shape.getProperties();
+            delete props._hover;
+            shape.setProperties(props);
+        }
+        lastHoveredId = null;
+    }
+});
+
+
+////////////////////////////////////////////////////////////
+
+            markerSource = new atlas.source.DataSource();
+            map.sources.add(markerSource);
+            map.layers.add(new atlas.layer.SymbolLayer(markerSource, null, {
+                iconOptions: { image: 'pin-round-blue', anchor: 'center' }
+            }));
+
+            polygonSource = new atlas.source.DataSource();
+            map.sources.add(polygonSource);
+            map.layers.add(new atlas.layer.PolygonLayer(polygonSource, null, {
+                fillColor: 'rgba(0, 123, 255, 0.6)',
+                strokeColor: '#007bff',
+                strokeWidth: 2
+            }));
+        });
+
+        
+    }
+
+    function calculatePolygonArea(coords) {
+    const toRad = angle => angle * Math.PI / 180;
+    let area = 0;
+    const earthRadius = 6378137; // Radio de la tierra en metros
+
+    for (let i = 0; i < coords.length - 1; i++) {
+        const [lon1, lat1] = coords[i];
+        const [lon2, lat2] = coords[i + 1];
+
+        area += toRad(lon2 - lon1) * (2 + Math.sin(toRad(lat1)) + Math.sin(toRad(lat2)));
+    }
+
+    area = area * earthRadius * earthRadius / 2.0;
+    return Math.abs(area); // metros cuadrados
+}
+
+
+function startMarkerMode() {
+    markerCoords = [];
+    markerSource.clear();
+    polygonSource.clear();
+
+    map.setUserInteraction({ dragPanInteraction: false });
+
+    // ✅ Asegúrate de no duplicar eventos
+    if (markerClickHandler) {
+        map.events.remove('click', markerClickHandler);
+    }
+
+    markerClickHandler = function (e) {
+    const coord = e.position; // [lng, lat] directamente
+
+    markerCoords.push([coord[0], coord[1]]);
+    markerSource.add(new atlas.data.Feature(new atlas.data.Point(coord)));
+};
+
+
+    map.events.add('click', markerClickHandler);
+
+    document.querySelector('[name="size_m2"]').value = "";
+}
+
+function finalizePolygon() {
+    if (markerClickHandler) {
+        map.events.remove('click', markerClickHandler);
+        markerClickHandler = null;
+    }
+
+    map.setUserInteraction({ dragPanInteraction: true });
+
+    if (markerCoords.length < 3) {
+        alert('Se necesitan al menos 3 puntos para formar un polígono.');
+        return;
+    }
+
+    // Asegura que el polígono esté cerrado
+    const first = markerCoords[0];
+    const last = markerCoords[markerCoords.length - 1];
+    if (first[0] !== last[0] || first[1] !== last[1]) {
+        markerCoords.push(first);
+    }
+
+    const polygonGeoJSON = {
+        type: "Polygon",
+        coordinates: [markerCoords]
+    };
+
+    polygonSource.setShapes([new atlas.data.Polygon([markerCoords])]);
+    document.getElementById('geojsonInput').value = JSON.stringify(polygonGeoJSON);
+
+    const area = calculatePolygonArea(markerCoords);
+    document.querySelector('[name="size_m2"]').value = area.toFixed(2);
+}
+
+function moveToLocation() {
+  const value = document.getElementById('selectPlace').value;
+  if (value) {
+    const [lat, lng, zoom] = value.split(',').map(parseFloat);
+    map.setCamera({
+      center: [lng, lat],
+      zoom: zoom || 17,
+      type: 'ease',
+      duration: 1000
+    });
+  }
+}
+
+
+function loadEditableSidebar(shape) {
+    const props = shape.getProperties();
+
+    // Oculta el formulario de registro
+    document.getElementById('sidebar').style.display = 'none';
+
+    // Muestra el formulario de edición
+    document.getElementById('editSidebar').style.display = 'block';
+
+    // Llenar campos
+    document.getElementById('edit_id').value = props.id;
+    document.getElementById('edit_name').value = props.name;
+    document.getElementById('edit_size_m2').value = props.size_m2;
+    document.getElementById('edit_capacity').value = props.capacity;
+    document.getElementById('edit_terrain_type').value = props.terrain_type || '';
+    document.getElementById('edit_rules').value = props.rules || '';
+    document.getElementById('edit_nearby_features').value = props.estrategicas || '';
+    document.getElementById('edit_precio').value = props.precio || '';
+    document.getElementById('edit_current_state').value = props.current_state || 'disponible';
+}
+
+function cancelEdit() {
+    document.getElementById('editSidebar').style.display = 'none';
+    document.getElementById('sidebar').style.display = 'block';
+}
+
+
+
+
+</script>
+<script>
+  fetch('/admin/services')
+    .then(res => res.json())
+    .then(services => {
+      const container = document.getElementById('services-checkboxes');
+      services.forEach(service => {
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        div.innerHTML = `
+          <input class="form-check-input" type="checkbox" name="services" value="${service.id}" id="service_${service.id}">
+          <label class="form-check-label" for="service_${service.id}">
+            <i class="fa ${service.icon}"></i> ${service.name}
+          </label>
+        `;
+        container.appendChild(div);
+      });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" type="text/css">
+  <link rel="stylesheet" href="https://static.pingendo.com/bootstrap/bootstrap-4.3.1.css">
+</head>
+
+<body style="background-image: linear-gradient(to bottom, rgb(12, 123, 179), rgb(242, 186, 232));	background-attachment: fixed; background-position: top left; background-size: cover; background-repeat: no-repeat;">
+  <nav class="navbar navbar-expand-lg bg-info navbar-light shadow-lg">
+    <div class="container"> <button class="navbar-toggler navbar-toggler-right border-0 p-0" type="button" data-toggle="collapse" data-target="#navbar14">
+        <p class="navbar-brand mb-0 text-dark">
+          <i class="fa d-inline fa-lg fa-stop-circle"></i> Dashboard </p>
+      </button>
+      <div class="collapse navbar-collapse" id="navbar14">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item"> <a class="nav-link" href="#"></a> </li>
+          <li class="nav-item"> <a class="nav-link" href="#"></a> </li>
+          <li class="nav-item"> <a class="nav-link" href="#"></a> </li>
+        </ul>
+        <p class="d-none d-md-block lead mb-0  text-dark"> <i class="fa d-inline fa-lg fa-map-marker"></i><b>&nbsp;Dashboard</b></p>
+        <ul class="navbar-nav ml-auto">
+          <a href="/admin/logout" class="btn btn-outline-dark btn-sm">Cerrar sesión</a>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <div class="py-5">
+    <div class="container">
+      <div class="row">
+        <div class="mx-auto col-md-8 text-center">
+          <h1>Bienvenido, <b>{{admin_name}}</b></h1>
+        </div>
+      </div>
+      <div class="row ">
+
+        <div class="col-lg-3 col-6 p-3 ">
+            <a onclick="window.location.href='/admin/admins'">
+          <div class="card shadow-lg"> <img class="card-img-top" src="/static/images/admin-icon.jpg" alt="Card image cap">    
+            <div class="card-body">
+              <h5 class="card-title text-center"> <b>Administradores</b></h5>
+            </div>
+          </div>
+          </a>
+        </div>
+
+        <div class="col-lg-3 col-6 p-3">
+            <a onclick="window.location.href='/admin/usuarios'">
+          <div class="card shadow-lg"> <img class="card-img-top" src="/static/images/user-icon.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title text-center"> <b>Usuarios</b></h5>
+            </div>
+          </div>
+          </a>
+        </div>
+
+        <div class="col-lg-3 col-6 p-3">
+            <a onclick="window.location.href='/admin/zones'">
+          <div class="card shadow-lg"> <img class="card-img-top" src="/static/images/map-icon.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title text-center"><b>Areas y Zonas</b></h5>
+            </div>
+          </div>
+          </a>
+        </div>
+
+        <div class="col-lg-3 col-6 p-3">
+           <a onclick="window.location.href='/admin/reservas'">
+          <div class="card shadow-lg"> <img class="card-img-top" src="/static/images/book-icon.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title text-center"> <b>Reservaciones</b></h5>
+            </div>
+          </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+
+</html>

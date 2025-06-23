@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" type="text/css">
+    <link rel="stylesheet" href="https://static.pingendo.com/bootstrap/bootstrap-4.3.1.css">
+    <link href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" rel="stylesheet" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
+    <title>GeoCamping</title>
+    <style>
+      @media (max-width: 576px) {
+  #leyenda {
+    max-height: 40vh;
+    font-size: 13px;
+  }
+  #toggleLeyenda {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+        .service-marker i {
+          font-size: 16px;
+        }
+        #slideOverlay {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 56px);
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2400;
+            display: none;
+        }
+
+        #zoneFullSlide {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            width: 85%;
+            max-width: 1000px;
+            height: calc(100% - 100px);
+            background: white;
+            color: black;
+            z-index: -1;
+            overflow-y: auto;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        #zoneFullSlide.active {
+            transform: translate(-50%, 0) scale(1);
+            opacity: 1;
+            z-index: 2500
+        }
+
+        #leyenda {
+  transition: all 0.3s ease;
+}
+
+#leyenda-content {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+#leyenda.oculto #leyenda-content {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+  padding: 0;
+  margin: 0;
+}
+    </style>
+</head>
+
+<body onload="loadMap()" class="bg-dark text-white" style="margin: 0; padding: 0; overflow: hidden;">
+<nav class="navbar navbar-expand-lg bg-dark navbar-dark" style="z-index: 3000;">
+    <div class="container">
+        <button class="navbar-toggler navbar-toggler-right border-0 p-0" type="button" data-toggle="collapse" data-target="#navbar14">
+            <p class="navbar-brand mb-0 text-white">
+                <i class="fa d-inline fa-lg fa-fire"></i> GeoCamping
+            </p>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar14">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"> <a class="btn btn-light" href="/reservas"><i class="fa fa-book fa-fw"></i>&nbsp;Mis Reservas</a> </li>
+            </ul>
+            <a href="/">
+                <p class="d-none d-md-block lead mb-0 text-white">
+                    <i class="fa d-inline fa-lg fa-fire"></i> <b> GeoCamping</b>
+                </p>
+            </a>
+            <ul class="navbar-nav ml-auto">
+                <a href="/logout" onclick="localStorage.removeItem('hasSeenTutorial');"><button class="btn btn-link text-white" >
+                    <i class="fa fa-sign-out fa-fw"></i> Cerrar Sesion
+                </button>
+                </a>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div id="map-container" style="position: relative; height: calc(100vh - 56px);">
+    <div id="myMap" style="width: 100%; height: 100%;"></div>
+    
+<div id="leyenda-container" style="position: absolute; top: 20px; left: 20px; z-index: 1000;">
+
+  <div id="leyenda" style="
+    background:#fff;
+    padding:10px;
+    border-radius:8px;
+    box-shadow:0 0 10px rgba(0,0,0,0.3);
+    max-height: 50vh;
+    overflow-y: auto;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  ">
+    <!-- contenido de leyenda se carga aquí -->
+  </div>
+
+  <button id="toggleLeyenda" class="btn btn-light btn-sm mt-2" style="width: 100%; box-shadow: 0 0 6px rgba(0,0,0,0.3);">
+    Ocultar leyenda
+  </button>
+</div>
+
+<!-- Overlay para fondo oscurecido -->
+<div id="slideOverlay" onclick="closeZoneSlide()"></div>
+
+<!-- Slide Panel centrado -->
+<div id="zoneFullSlide">
+    <button onclick="closeZoneSlide()" style="position: absolute; top: 10px; right: 20px; font-size: 24px; background: transparent; border: none;">✖</button>
+    <div id="zoneFullSlideContent"></div>
+    <div id="zoneFullSlideWeather" style="margin-top: 20px;"></div>
+</div>
+
+<div id="lightboxOverlay" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.8);
+  z-index: 3000;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+">
+  <img id="lightboxImage" src="" style="max-width: 90%; max-height: 80%; border-radius: 12px; box-shadow: 0 0 20px black; transition: transform 0.3s ease;">
+  <button onclick="closeLightbox()" style="position: absolute; top: 20px; right: 30px; font-size: 32px; color: white; background: transparent; border: none; cursor: pointer;">✖</button>
+</div>
+<div id="firstLoginOverlay" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+  <button onclick="closeFirstLoginOverlay()" style="position: absolute; top: 20px; right: 30px; font-size: 28px; background: transparent; border: none; color: white;">&times;</button>
+  <h1>Bienvenido a GeoCamping</h1>
+  <p style="color: white; max-width: 600px; text-align: center;">Aquí encontrarás zonas de campamento únicas y podrás reservarlas fácilmente. Haz clic en cualquier zona del mapa para ver más detalles y proceder a la reserva.</p>
+  <img src="https://azgeojsonblob.blob.core.windows.net/az-geojson-imgs/principal/tutorial.gif" alt="Tutorial" style="max-width: 90%; max-height: 80%; cursor: pointer;" onclick="closeFirstLoginOverlay()">
+</div>
+
+<script>
+let lastHoveredId = null;
+function loadMap() {
+
+  function mostrarPanelDisponibilidad(zonas) {
+  const total = zonas.length;
+  const disponibles = zonas.filter(z => z.properties.current_state === 'disponible').length;
+  const porcentaje = total ? Math.round((disponibles / total) * 100) : 0;
+
+  let mensaje = '';
+  if (porcentaje < 20) {
+    mensaje = '⚠️ ¡Quedan pocas zonas disponibles!';
+  } else if (porcentaje < 50) {
+    mensaje = '🟠 Disponibilidad limitada, reserva pronto.';
+  } else if (porcentaje >= 80) {
+    mensaje = '🟢 La mayoría de las zonas están disponibles.';
+  } else {
+    mensaje = '🔵 Hay algunas zonas disponibles.';
+  }
+
+  const panel = document.createElement('div');
+  panel.id = 'panel-disponibilidad';
+  panel.style.position = 'absolute';
+  panel.style.bottom = '20px';
+  panel.style.right = '20px';
+  panel.style.zIndex = '999';
+  panel.style.background = '#fff';
+  panel.style.padding = '10px 15px';
+  panel.style.borderRadius = '10px';
+  panel.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
+  panel.style.maxWidth = '250px';
+  panel.style.fontSize = '14px';
+  panel.style.color = 'black';
+
+  panel.innerHTML = `
+    <h6 class="text-dark">Estado general:</h6>
+    <p class="mb-1">Zonas disponibles: <strong>${disponibles}</strong> de ${total}</p>
+    <p class="mb-0"><em>${mensaje}</em></p>
+  `;
+
+  document.getElementById('myMap').appendChild(panel);
+}
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const lat = parseFloat(urlParams.get('lat'));
+  const lng = parseFloat(urlParams.get('lng'));
+  const zoom = parseInt(urlParams.get('zoom')) || 16;
+  
+  const initialCenter = (isNaN(lat) || isNaN(lng)) 
+  ? [-99.18945481670335, 19.419492713270472] // valor por defecto
+  : [lng, lat];  // Azure Maps usa [lng, lat]
+
+    const map = new atlas.Map('myMap', {
+          center: initialCenter,
+          zoom: zoom,
+          style: 'satellite_road_labels',
+          view: 'Auto',
+          authOptions: {
+            authType: 'subscriptionKey',
+            subscriptionKey: 'C1aV07zlVLBOOkN0EKcoJ7ukidFV9dG5ZIccXmB1xEqKgHxqIdckJQQJ99BFACYeBjF3acCYAAAgAZMP1Hl4'
+        }
+    });
+
+    map.events.add('ready', function () {
+
+function pointInPolygon(point, polygon) {
+    const [x, y] = point;
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i][0], yi = polygon[i][1];
+        const xj = polygon[j][0], yj = polygon[j][1];
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+                          (x < (xj - xi) * (y - yi) / (yj - yi + 0.00000001) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+function getRandomCoordInPolygon(polygonCoords) {
+    const lons = polygonCoords.map(p => p[0]);
+    const lats = polygonCoords.map(p => p[1]);
+    const minLng = Math.min(...lons);
+    const maxLng = Math.max(...lons);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+
+    for (let i = 0; i < 20; i++) {
+        const randLng = minLng + Math.random() * (maxLng - minLng);
+        const randLat = minLat + Math.random() * (maxLat - minLat);
+        const coord = [randLng, randLat];
+
+        if (pointInPolygon(coord, polygonCoords)) {
+            return coord;
+        }
+    }
+
+    // Fallback si no se encuentra dentro
+    const avgLng = (minLng + maxLng) / 2;
+    const avgLat = (minLat + maxLat) / 2;
+    return [avgLng, avgLat];
+}
+
+
+
+     /* function getRandomCoordInPolygon(polygonCoords) {
+        const idx = Math.floor(Math.random() * polygonCoords.length);
+        const offsetLng = (Math.random() - 0.5) * 0.0008;
+        const offsetLat = (Math.random() - 0.5) * 0.0008;
+        return [
+            polygonCoords[idx][0] + offsetLng,
+            polygonCoords[idx][1] + offsetLat
+          ];
+      } */
+
+      
+        map.controls.add(new atlas.control.ZoomControl(), { position: 'top-right' });
+        const zoneSource = new atlas.source.DataSource();
+        map.sources.add(zoneSource);
+
+        const polygonLayer = new atlas.layer.PolygonLayer(zoneSource, null, {
+            fillColor: [
+                'match',
+                ['get', 'current_state'],
+                'disponible', 'rgba(40,167,69,0.6)',
+                'reservado', 'rgba(255,193,7,0.6)',
+                'ocupado', 'rgba(220,53,69,0.6)',
+                'rgba(108,117,125,0.3)'
+            ],
+            fillOpacity: [
+                'case',
+                ['boolean', ['get', '_hover'], false], 1.2,
+                0.6
+            ],
+            strokeColor: 'black',
+            strokeWidth: 2
+        });
+
+        map.layers.add(polygonLayer);
+
+        fetch('/zones.geojson')
+            .then(response => response.json())
+            .then(data => {
+                zoneSource.add(data);
+                mostrarPanelDisponibilidad(data.features);
+
+                // Añadir marcador por cada zona con servicios
+data.features.forEach(zone => {
+    const zoneId = zone.properties.id;
+    const coords = zone.geometry.coordinates[0]; // anillo exterior
+    
+    const [lng, lat] = getRandomCoordInPolygon(coords);
+    const lngLat = new atlas.data.Position(lng, lat);
+    
+
+    fetch(`/zones/${zoneId}/services`)
+        .then(res => res.json())
+        .then(services => {
+            services.forEach(service => {
+              const [lng, lat] = getRandomCoordInPolygon(coords);
+    const lngLat = new atlas.data.Position(lng, lat);
+
+                const el = document.createElement('div');
+                el.className = 'service-marker';
+                el.style.background = 'white';
+                el.style.borderRadius = '50%';
+                el.style.width = '32px';
+                el.style.height = '32px';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.boxShadow = '0 0 6px rgba(0,0,0,0.3)';
+                el.innerHTML = `<i class="fa ${service.icon}" style="color: black;"></i>`;
+
+                el.innerHTML = `
+                <i class="fa ${service.icon}" style="color: black;"></i>
+                <div class="tooltip-text" style="
+                  visibility: hidden;
+                  background-color: rgba(0,0,0,0.8);
+                  color: white;
+                  text-align: center;
+                  border-radius: 5px;
+                  padding: 5px 8px;
+                  position: absolute;
+                  z-index: 1000;
+                  bottom: 120%;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  font-size: 12px;
+                  white-space: nowrap;
+                  pointer-events: none;
+                ">${service.name}</div>
+              `;
+
+// Mostrar tooltip al hacer hover
+el.addEventListener('mouseenter', () => {
+  el.querySelector('.tooltip-text').style.visibility = 'visible';
+});
+el.addEventListener('mouseleave', () => {
+  el.querySelector('.tooltip-text').style.visibility = 'hidden';
+});
+
+                const marker = new atlas.HtmlMarker({
+                    position: lngLat,
+                    htmlContent: el,
+                    pixelOffset: [0, 0]
+                });
+                map.markers.add(marker);
+            });
+        });
+});
+
+
+                if (data.features.length > 0) {
+                    const bounds = atlas.data.BoundingBox.fromData(data);
+                    //map.setCamera({ bounds: bounds, padding: 30 });
+                }
+
+                map.events.add('click', polygonLayer, function (e) {
+                    if (e.shapes && e.shapes.length > 0) {
+                        const shape = e.shapes[0];
+                        const props = shape.getProperties();
+
+                        const today = new Date();
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const minDate = tomorrow.toISOString().split('T')[0];
+
+const zoneHtml = `
+
+                        
+  <div class="py-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+            <h1><b>${props.name}</b> <span class="badge badge-light">$${props.precio}/noche</span> <div id="estadoZonaInfo" style="display: inline;"></div></h1>
+          <p class="lead">Explora esta zona de campamento única.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="carousel slide" data-ride="carousel" id="carousel">
+            <div class="carousel-inner" id="mainCarouselImages">
+              <!-- imágenes se insertan vía JS -->
+            </div>
+
+            <a class="carousel-control-prev" href="#carousel" role="button" data-slide="prev">
+              <span class="carousel-control-prev-icon"></span>
+              <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#carousel" role="button" data-slide="next">
+              <span class="carousel-control-next-icon"></span>
+              <span class="sr-only">Next</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h2><b>Galería de Imágenes</b></h2>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="">
+    <div class="container">
+      <div class="row" id="extraImagesGallery">
+        <!-- imágenes adicionales dinámicas -->
+      </div>
+    </div>
+  </div>
+
+  <div class="pt-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h2><b>Acerca de este campamento</b></h2>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="">
+    <div class="container">
+      <div class="table-responsive">
+        <table class="table table-striped table-borderless">
+          <tbody>
+            <tr><td><h4><b>Tamaño:</b> ${props.size_m2} m²</h4></td></tr>
+            <tr><td><h4><b>Capacidad:</b> ${props.capacity} Personas</h4></td></tr>
+            <tr><td><h4><b>Terreno:</b> ${props.terrain_type}</h4></td></tr>
+            <tr><td><h4><b>Reglas:</b> ${props.rules}</h4></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="pt-5">
+    <div class="container">
+      <div class="col-md-12">
+        <h2><b>Puntos de interés</b></h2>
+      </div>
+    </div>
+  </div>
+
+<div class="text-center">
+  <div class="container">
+    <div class="row justify-content-center" id="zona-servicios-list">
+      <!-- Servicios dinámicos se insertarán aquí -->
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="px-5 col-md-12" id="estadoZonaInfo">
+      <!-- estado dinámico aquí -->
+    </div>
+  </div>
+</div>
+
+
+  <div class="pt-5">
+    <div class="container">
+      <div class="col-md-12">
+
+        ${props.logged_in ?
+  `
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label><b>Fecha de Entrada:</b></label>
+        <input type="date" class="form-control" id="fechaInicio" min="${minDate}">
+      </div>
+      <div class="form-group col-md-6">
+        <label><b>Fecha de Salida:</b></label>
+        <input type="date" class="form-control" id="fechaFin" min="${minDate}">
+      </div>
+    </div>
+    <button onclick="reservarZona(${props.id}, '${props.name}', ${props.precio})" class="btn btn-success w-100 mt-3">
+      <h2><b>Proceder a la Compra</b></h2>
+    </button>
+  ` : `
+    <a href='/login' onclick='localStorage.removeItem("hasSeenTutorial");'>
+      <button class="btn btn-info w-100 mt-3">
+        <h2><b>Acceda a su cuenta para reservar</b></h2>
+      </button>
+    </a>
+  `
+}
+
+
+      </div>
+    </div>
+  </div>
+                        `;
+
+                        openZoneSlide(zoneHtml);
+
+                        fetch(`/zones/${props.id}/services`)
+                          .then(res => res.json())
+                          .then(services => {
+                            const container = document.getElementById('zona-servicios-list');
+                            container.innerHTML = '';
+                            if (services.length === 0) {
+                              container.innerHTML = `<div class="col-12 text-muted"><em>Esta zona no tiene servicios registrados.</em></div>`;
+                            } else {
+                              services.forEach(s => {
+                                const col = document.createElement('div');
+                                col.className = 'col-lg-3 col-6 p-4';
+                                col.innerHTML = `
+                                  <i class="d-block fa ${s.icon} fa-3x mb-2 text-muted"></i>
+                                  <h4><b>${s.name}</b></h4>
+                                `;
+                                container.appendChild(col);
+                              });
+                            }
+                          });
+
+
+                        const carousel = document.getElementById('mainCarouselImages');
+
+                        // Insertar imagen principal como primer item activo
+                        const mainItem = document.createElement('div');
+                        mainItem.className = 'carousel-item active';
+                        mainItem.innerHTML = `
+                          <img class="d-block w-100" style="object-fit: cover; height: 400px; border-radius: 15px; cursor: zoom-in;" src="${props.main_image_url}" onclick="openLightbox('${props.main_image_url}')">
+                        `;
+                        carousel.appendChild(mainItem);
+
+                        // Insertar imágenes adicionales
+                        fetch(`/zones/${props.id}/imagenes`)
+                          .then(res => res.json())
+                          .then(imgs => {
+                            const gallery = document.getElementById('extraImagesGallery');
+                            imgs.forEach((url, idx) => {
+                              // Galería
+                              const imgCol = document.createElement('div');
+                              imgCol.className = 'col-md-3 col-6';
+                              imgCol.innerHTML = `<img class="img-fluid d-block" style="object-fit: cover; height: 400px;border-radius: 10px; cursor: zoom-in;" src="${url}" onclick="openLightbox('${url}')">`;
+                              gallery.appendChild(imgCol);
+
+                              // Carrusel
+                              const item = document.createElement('div');
+                              item.className = 'carousel-item';
+                              item.innerHTML = `
+                                <img class="d-block w-100" style="object-fit: cover; height: 400px; border-radius: 15px;  cursor: zoom-in;" src="${url}" onclick="openLightbox('${url}')">
+                              `;
+                              carousel.appendChild(item);
+                            });
+                          });
+
+
+                        const estadoZona = props.current_state;
+                        const estadoDiv = document.getElementById('estadoZonaInfo');
+
+                        let estadoHtml = '';
+
+                        if (estadoZona === 'disponible') {
+                            estadoHtml = `
+                            <span class="badge badge-pill badge-success" style="font-size: 20px;">Disponible</span>
+                          `;
+                        } else if (estadoZona === 'reservado') {
+                          estadoHtml = `
+                            <span class="badge badge-pill badge-warning" style="font-size: 20px;">Reservado</span>
+                          `;
+                        } else if (estadoZona === 'ocupado') {
+                          estadoHtml = `
+                            <span class="badge badge-pill badge-danger" style="font-size: 20px;">Ocupado</span>
+                          `;
+                        }
+
+                          estadoDiv.innerHTML = estadoHtml;
+
+                        fetch(`/zones/${props.id}/fechas_ocupadas`).then(res => res.json()).then(deshabilitarFechas);
+
+                        setTimeout(() => {
+                            const inputInicio = document.getElementById('fechaInicio');
+                            if (inputInicio) {
+                                inputInicio.addEventListener('input', () => {
+                                    const startDate = inputInicio.value;
+                                    if (startDate) {
+                                        const [lon, lat] = shape.getCoordinates()[0][0];
+                                        showWeatherSlide(lat, lon, startDate, 'zoneFullSlideWeather');
+                                    }
+                                });
+                            }
+                        }, 100);
+                    }
+                });
+
+                map.events.add('mousemove', polygonLayer, function (e) {
+                    if (e.shapes && e.shapes.length > 0) {
+                        const shape = e.shapes[0];
+                        const id = shape.getId();
+                        if (lastHoveredId !== id) {
+                            if (lastHoveredId) {
+                                const lastShape = zoneSource.getShapeById(lastHoveredId);
+                                if (lastShape) {
+                                    const props = lastShape.getProperties();
+                                    delete props._hover;
+                                    lastShape.setProperties(props);
+                                }
+                            }
+                            const props = shape.getProperties();
+                            props._hover = true;
+                            shape.setProperties(props);
+                            lastHoveredId = id;
+                        }
+                    }
+                });
+
+                map.events.add('mouseout', polygonLayer, function () {
+                    if (lastHoveredId) {
+                        const shape = zoneSource.getShapeById(lastHoveredId);
+                        if (shape) {
+                            const props = shape.getProperties();
+                            delete props._hover;
+                            shape.setProperties(props);
+                        }
+                        lastHoveredId = null;
+                    }
+                });
+            });
+    });
+
+    function construirLeyenda() {
+  const leyenda = document.getElementById("leyenda");
+  leyenda.innerHTML = '';
+
+  // Sección estados
+  const estados = document.createElement('ul');
+  estados.style.listStyle = 'none';
+  estados.style.padding = '0';
+  estados.style.margin = '0';
+
+  const colores = [
+    { color: 'rgba(40,167,69,0.6)', nombre: 'Disponible' },
+    { color: 'rgba(255,193,7,0.6)', nombre: 'Reservado' },
+    { color: 'rgba(220,53,69,0.6)', nombre: 'Ocupado' }
+  ];
+
+  colores.forEach(c => {
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.alignItems = 'center';
+    li.style.marginBottom = '8px';
+    li.innerHTML = `
+      <span style="width:20px; height:20px; background:${c.color}; border:1px solid black; border-radius:4px;"></span>
+      <span class="ml-2 text-dark" style="margin-left: 8px;">${c.nombre}</span>
+    `;
+    estados.appendChild(li);
+  });
+
+  leyenda.appendChild(estados);
+
+  // Sección de servicios
+  const tituloServ = document.createElement('h6');
+  tituloServ.innerText = 'Servicios disponibles';
+  tituloServ.classList.add('mt-3', 'text-dark');
+  leyenda.appendChild(tituloServ);
+
+  const contenedorServ = document.createElement('div');
+  contenedorServ.style.display = 'flex';
+  contenedorServ.style.flexWrap = 'wrap';
+  contenedorServ.style.gap = '12px';
+  contenedorServ.style.marginTop = '8px';
+
+  // Llamar a los servicios desde el servidor
+  fetch('/admin/services')  // o la ruta pública que tengas
+    .then(res => res.json())
+    .then(services => {
+      const ul = document.createElement('ul');
+      ul.style.listStyle = 'none';
+      ul.style.padding = '0';
+      ul.style.margin = '0';
+      services.forEach(s => {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '6px';
+        li.style.marginBottom = '1px';
+        li.innerHTML = `
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.2);">
+            <i class="fa ${s.icon}" style="color: black;"></i>
+          </div>
+          <span style="font-size: 13px; color: black;">${s.name}</span>
+        `;
+        ul.appendChild(li);
+      });
+
+      contenedorServ.appendChild(ul);
+    });
+
+  leyenda.appendChild(contenedorServ);
+  document.getElementById('leyenda').style.display = 'block';
+
+}
+
+// Ejecutar después de loadMap()
+
+ showFirstLoginTutorial()
+
+map.events.add('ready', () => {
+  construirLeyenda();
+});
+
+const toggleBtn = document.getElementById('toggleLeyenda');
+const leyenda = document.getElementById('leyenda');
+
+toggleBtn.addEventListener('click', () => {
+  const isHidden = leyenda.style.display === 'none';
+
+  if (isHidden) {
+    leyenda.style.display = 'block';
+    leyenda.style.opacity = '1';
+    leyenda.style.transform = 'translateY(0)';
+    toggleBtn.textContent = 'Ocultar leyenda';
+  } else {
+    leyenda.style.opacity = '0';
+    leyenda.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      leyenda.style.display = 'none';
+    }, 400);
+    toggleBtn.textContent = 'Mostrar leyenda';
+  }
+});
+
+// Inicialmente visible
+leyenda.style.display = 'block';
+
+
+}
+
+function showFirstLoginTutorial() {
+  const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+
+  // Solo mostrar si no lo ha visto aún
+  if (!hasSeenTutorial) {
+    const overlay = document.getElementById('firstLoginOverlay');
+    overlay.style.display = 'flex'; // usa flex para centrar contenido
+  }
+}
+
+function openZoneSlide(htmlContent) {
+    const panel = document.getElementById('zoneFullSlide');
+    document.getElementById('zoneFullSlideContent').innerHTML = htmlContent;
+    panel.classList.add('active');
+    document.getElementById('slideOverlay').style.display = 'block';
+}
+
+function closeZoneSlide() {
+    const panel = document.getElementById('zoneFullSlide');
+    panel.classList.remove('active');
+    document.getElementById('zoneFullSlideContent').innerHTML = '';
+    document.getElementById('zoneFullSlideWeather').innerHTML = '';
+    document.getElementById('slideOverlay').style.display = 'none';
+}
+
+function reservarZona(zoneId, zoneName, precio) {
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+
+    if (!fechaInicio || !fechaFin) {
+        alert("Por favor selecciona ambas fechas.");
+        return;
+    }
+
+    if (new Date(fechaFin) <= new Date(fechaInicio)) {
+        alert("La fecha de salida debe ser posterior a la de entrada.");
+        return;
+    }
+
+    window.location.href = `/reservar?zone_id=${zoneId}&start=${fechaInicio}&end=${fechaFin}`;
+}
+
+function deshabilitarFechas(fechasBloqueadas) {
+    const inicio = document.getElementById("fechaInicio");
+    const fin = document.getElementById("fechaFin");
+    inicio.value = '';
+    fin.value = '';
+    inicio.removeAttribute("disabled");
+    fin.removeAttribute("disabled");
+
+    const disableDates = (input) => {
+        input.addEventListener("input", () => {
+            if (fechasBloqueadas.includes(input.value)) {
+                alert("La fecha seleccionada ya está reservada.");
+                input.value = '';
+            }
+        });
+    };
+
+    disableDates(inicio);
+    disableDates(fin);
+}
+
+async function fetchWeather(lat, lon, startDate) {
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&start_date=${startStr}&end_date=${endStr}&daily=weathercode,temperature_2m_max&timezone=auto`;
+    const resp = await fetch(url);
+    return resp.json();
+}
+
+function mapWeatherCodeToEmoji(code) {
+    if (code === 0) return '☀️';
+    if (code <= 3) return '🌤️';
+    if (code <= 49) return '🌫️';
+    if (code <= 69) return '🌧️';
+    if (code <= 79) return '🌨️';
+    if (code <= 95) return '⛈️';
+    return '❓';
+}
+
+function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    return `${day}/${month}`;
+}
+
+async function showWeatherSlide(lat, lon, startDate, containerId = 'zoneFullSlideWeather') {
+    const data = await fetchWeather(lat, lon, startDate);
+    const dates = data.daily.time;
+    const codes = data.daily.weathercode;
+    const temps = data.daily.temperature_2m_max;
+    const container = document.getElementById(containerId);
+
+    container.innerHTML = `
+      <h4 class="mt-4"><b>Pronóstico del Clima</b></h4>
+      <div class="container mt-3">
+        <div class="row justify-content-center" id="weatherRow"></div>
+      </div>
+    `;
+
+    const row = container.querySelector('#weatherRow');
+
+    for (let i = 0; i < dates.length; i++) {
+        const col = document.createElement('div');
+        col.className = 'col-md-2 col-4 text-center mb-3';
+        col.innerHTML = `
+          <div class="card bg-light text-dark shadow-sm">
+            <div class="card-body p-2">
+              <div style="font-size:13px;"><b>${formatDate(dates[i])}</b></div>
+              <div style="font-size:26px;">${mapWeatherCodeToEmoji(codes[i])}</div>
+              <div style="font-size:14px;">${Math.round(temps[i])}°C</div>
+            </div>
+          </div>
+        `;
+        row.appendChild(col);
+    }
+}
+
+
+function openLightbox(src) {
+  const overlay = document.getElementById('lightboxOverlay');
+  const img = document.getElementById('lightboxImage');
+  img.src = src;
+  overlay.style.display = 'flex';
+  requestAnimationFrame(() => {
+    overlay.style.opacity = '1';
+    img.style.transform = 'scale(1)';
+  });
+}
+
+function closeLightbox() {
+  const overlay = document.getElementById('lightboxOverlay');
+  const img = document.getElementById('lightboxImage');
+  overlay.style.opacity = '0';
+  img.style.transform = 'scale(0.95)';
+  setTimeout(() => overlay.style.display = 'none', 300);
+}
+
+
+
+function closeFirstLoginOverlay() {
+  localStorage.setItem('hasSeenTutorial', 'true');
+  document.getElementById('firstLoginOverlay').style.display = 'none';
+}
+
+</script>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous" ></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>

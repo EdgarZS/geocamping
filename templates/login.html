@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>Iniciar Sesion</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="static/css/main.css" />
+    <noscript>
+        <link rel="stylesheet" href="static/css/noscript.css" />
+    </noscript>
+</head>
+
+<body class="is-preload">
+    <div id="wrapper">
+        <p>{{error}}</p>
+        <header id="header">
+            <div class="mx-auto col-md-6 col-10 bg-white p-5">
+                <h1 class="mb-4">Accede con tu cuenta</h1>
+                    <form method="post">
+                    <div class="form-group"> <input type="email" name="email" class="form-control" placeholder="Correo electronico" required> </div> <br>
+                    <div class="form-group mb-3"> <input type="password" name="password" class="form-control" placeholder="Contraseña" required> <small class="form-text text-muted text-right"><br> </small> </div> 
+                    <input type="submit" class="btn btn-primary" value="Iniciar Sesion"> <br>
+                    <a href="/register">Registrate</a>
+                </form>
+            </div>
+        </header>
+        <footer id="footer">
+            <div class="mx-auto col-md-6 col-10 bg-white p-5">
+				<a href="/zones" class="text-center">Explora las Zonas disponibles!</a>
+			</div>
+        </footer>
+    </div>
+
+    <div id="bg"></div>
+
+
+    <script src="static/js/jquery.min.js"></script>
+    <script src="static/js/browser.min.js"></script>
+    <script src="static/js/breakpoints.min.js"></script>
+    <script src="static/js/util.js"></script>
+    <script src="static/js/main.js"></script>
+
+</body>
+
+</html>
