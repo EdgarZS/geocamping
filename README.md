@@ -138,7 +138,7 @@ geocamping/
 ## 🖼️ Capturas
 
 ### Vista de Reservas
-![Reservas](assets/reservas-screenshot.png)
+![Reservas](capturas/2.png)
 
-### Mapa de Zonas Disponibles
-![Mapa](assets/mapa-preview.png)
+### Vista de Login
+![Mapa](capturas/1.png)
