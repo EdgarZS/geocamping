@@ -140,5 +140,8 @@ geocamping/
 ### Vista de Reservas
 ![Reservas](capturas/2.png)
 
+### Vista de Detalles
+![Reservas](capturas/video.png)
+
 ### Vista de Login
 ![Mapa](capturas/1.png)
